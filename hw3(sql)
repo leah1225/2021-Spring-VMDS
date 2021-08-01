@@ -1,0 +1,174 @@
+/*Question_1*/
+SELECT  CASE WHEN release_year < 2000 THEN 0
+        ELSE 1 END AS after_millennium
+        FROM movies;
+        
+SELECT  CASE WHEN release_year < 2000 THEN 0
+             ELSE 1 END AS after_millennium,
+        COUNT(*) AS number_of_movies
+   FROM movies
+GROUP BY after_millennium;
+
+/*Question_2*/
+SELECT  CASE WHEN rating >= 8.6 THEN 'Awesome'
+             WHEN rating >= 8.3 THEN 'Terrific'
+             ELSE 'Great' END AS rating_category,
+         COUNT(*) AS number_of_movies
+     FROM movies
+ GROUP BY rating_category;
+ 
+/*Question_3*/
+SELECT MIN(runtime),
+       MAX(runtime)
+    FROM movies;
+
+SELECT *
+    FROM movies
+    WHERE runtime = (
+        SELECT  MIN(runtime)
+            FROM movies);
+
+SELECT *
+    FROM movies
+ WHERE runtime = (
+       SELECT  MIN(runtime)
+           FROM movies)
+    OR runtime = (
+       SELECT  MAX(runtime)
+           FROM movies);
+           
+/*Question_4*/
+SELECT *
+    FROM movies
+ WHERE release_year = (
+       SELECT  MIN(release_year)
+           FROM movies)
+    OR release_year = (
+       SELECT  MAX(release_year)
+           FROM movies);
+           
+/*Question_5*/
+SELECT director,
+        COUNT(*) AS number_of_movies
+    FROM movies
+ GROUP BY director
+ORDER BY number_of_movies DESC;
+
+/*Question_6*/
+/*directors with over 3 movies (>3)*/
+SELECT director
+    FROM movies
+  GROUP BY director
+ HAVING COUNT(*) > 3;
+ 
+/*Because there are more than one director, we should use 'in' instead of '=' at WHERE director...*/
+SELECT director,
+       title
+   FROM movies
+  WHERE director in (SELECT director
+    FROM movies
+  GROUP BY director
+ HAVING COUNT(*) > 3)
+ORDER BY director;
+
+/*Question_7*/
+/*movie_id for The Shawshank Redemption*/
+SELECT id
+    FROM movies
+   WHERE title = 'The Shawshank Redemption'; /*id = 1*/
+
+/*actor_id for The Shawshank Redemption*/
+SELECT actor_id
+    FROM casting
+   WHERE movie_id = 1;
+   
+SELECT name 
+    FROM actors
+   WHERE id in (
+       SELECT actor_id
+           FROM casting
+         WHERE movie_id = (
+                 SELECT id
+                    FROM movies
+                  WHERE title = 'The Shawshank Redemption'
+  )
+);
+
+/*Question_8*/
+
+SELECT *
+  FROM movies
+  JOIN casting
+    ON movies.id = casting.movie_id
+  WHERE title = 'The Shawshank Redemption';
+
+SELECT *
+  FROM casting
+  JOIN actors
+    ON casting.actor_id = actors.id
+  WHERE movie_id = 1;
+  
+SELECT title,
+       ord,
+       name
+    FROM movies
+    JOIN (SELECT movie_id,
+                 ord,
+                 name
+            FROM casting
+            JOIN actors
+              ON casting.actor_id = actors.id) AS casting_actors
+      ON movies.id = casting_actors.movie_id
+ WHERE title = 'The Shawshank Redemption';
+
+/*Question_9*/
+/*finding Tom Hanks or Leonardo DiCaprio's actor_id*/
+SELECT movie_id,
+       ord,
+       actor_id,
+       name
+    FROM casting
+    JOIN actors
+      ON casting.actor_id = actors.id
+  WHERE name = 'Tom Hanks' OR name = 'Leonardo DiCaprio';
+  
+SELECT title,
+       ord,
+       name
+    FROM movies
+    JOIN (SELECT movie_id,
+                 ord,
+                 actor_id,
+                 name
+             FROM casting
+             JOIN actors
+               ON casting.actor_id = actors.id
+           WHERE name = 'Tom Hanks' OR name = 'Leonardo DiCaprio') AS TH_LD_casting
+ WHERE movies.id = TH_LD_casting.movie_id
+ ORDER BY name,
+          title;
+          
+/*Question_10*/
+/*the movies starred by Leonardo DiCaprio*/
+SELECT movie_id,
+       ord,
+       name
+    FROM casting
+    JOIN actors
+        ON casting.actor_id = actors.id
+WHERE name = 'Leonardo DiCaprio' AND ord = 1;
+
+SELECT title,
+       release_year,
+       director,
+       name AS lead_actor
+    FROM movies
+    JOIN(SELECT movie_id,
+                ord,
+                name
+            FROM casting
+            JOIN actors
+              ON casting.actor_id = actors.id
+           WHERE name = 'Leonardo DiCaprio'AND ord = 1) AS LD_star_CN_direct
+       ON movies.id = LD_star_CN_direct.movie_id
+   WHERE director = 'Christopher Nolan';
